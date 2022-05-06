@@ -41,6 +41,21 @@ async function run() {
                         res.send(item);
                 })
 
+                // Add New Item to Database:
+                app.post('/items', async (req, res) => {
+                        const newItem = req.body;
+                        const insertNewItem = await itemCollections.insertOne(newItem);
+                        res.send(insertNewItem);
+                })
+
+                // Delete Item:
+                app.delete('/items/:id', async (req, res) => {
+                        const id = req.params.id;
+                        const query = { _id: ObjectId(id) };
+                        const deleteItem = await itemCollections.deleteOne(query);
+                        res.send(deleteItem);
+                })
+
         }
         finally {
 
