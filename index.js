@@ -20,11 +20,6 @@ async function run() {
                 const itemCollections = client.db("Chaldal-Warehouse").collection("items");
                 console.log("Database Connecter")
 
-                // Root Api:
-                // app.use('/', (req, res) => {
-                //         res.send("Hello from Chaldal Warehouse");
-                // })
-
                 // Load All Items:
                 app.get("/items", async (req, res) => {
                         const query = {};
@@ -56,11 +51,7 @@ async function run() {
                         const options = { upsert: true };
                         const updateDoc = {
                                 $set: {
-                                        name: updatedQuantity.name,
-                                        description: updatedQuantity.description,
-                                        img: updatedQuantity.img,
                                         quantity: updatedQuantity.quantity,
-                                        price: updatedQuantity.price,
                                         sold: updatedQuantity.sold
                                 }
                         }
@@ -83,6 +74,10 @@ async function run() {
 }
 run().catch(console.dir);
 
+// Root Api:
+app.get('/', (req, res) => {
+        res.send("Hello from Chaldal Warehouse");
+})
 
 app.listen(port, () => {
         console.log("Listening from chaldal Warehouse");
