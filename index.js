@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -8,6 +9,22 @@ const port = process.env.PORT || 5000;
 // Use Middleware:
 app.use(cors());
 app.use(express.json());
+
+// Verify JWT:
+function verifyJWT(req, res, next) {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+                return res.status(401).send({ message: "Unauthorized Access!" });
+        }
+        const token = authHeader.split(' ')[1];
+        jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                        return res.status(403).send({ message: "Forbidden Access!" });
+                }
+                req.decoded = decoded;
+                next();
+        })
+}
 
 // MongoDB Connection:
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -18,7 +35,16 @@ async function run() {
         try {
                 await client.connect();
                 const itemCollections = client.db("Chaldal-Warehouse").collection("items");
-                console.log("Database Connecter")
+                console.log("Database Connecter");
+
+                // Using JWT:
+                app.post('/get-token', async (req, res) => {
+                        const user = req?.body;
+                        const accessToken = jwt.sign(user, process.env.TOKEN_SECRET, {
+                                expiresIn: '1d'
+                        });
+                        res.send(accessToken);
+                })
 
                 // Load All Items:
                 app.get("/items", async (req, res) => {
@@ -26,6 +52,20 @@ async function run() {
                         const cursor = itemCollections.find(query);
                         const items = await cursor.toArray();
                         res.send(items);
+                })
+                // Load Items for Single User Items and Verify JWT:
+                app.get("/my-items", verifyJWT, async (req, res) => {
+                        const decodedEmail = req?.decoded?.email;
+                        const email = req.query.email;
+                        if (email === decodedEmail) {
+                                const query = { email: email };
+                                const cursor = itemCollections.find(query);
+                                const items = await cursor.toArray();
+                                res.send(items);
+                        }
+                        else {
+                                return res.status(403).send({ message: "Forbidden Access!" });
+                        }
                 })
 
                 //Load Item by single Id:
